@@ -4,7 +4,7 @@ const port = 3000
 const { User } = require("./Models/User");
 const bodyParser = require('body-parser');
 const config = require('./config/key');
-
+const { auth } = require("./middleware/auth");
 
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
@@ -27,7 +27,7 @@ app.get('/test', (req, res) => {
   res.send('Hello Test World!')
 })
 
-app.post('/register', (req, res) => {
+app.post('/api/user/register', (req, res) => {
   //회원가입 정보 Client에서 수신
 
   const user = new User(req.body);
@@ -40,7 +40,7 @@ app.post('/register', (req, res) => {
   });
 })
 
-app.post('/login', (req, res) => {
+app.post('/api/user/login', (req, res) => {
   User.findOne({ email: req.body.email }, (err, user) => {
     if (!user) {
       return res.json({
@@ -63,6 +63,28 @@ app.post('/login', (req, res) => {
     })
 
   })
+})
+
+app.get('/api/user/auth', auth, (req, res) => {
+  res.status(200).json({
+    _id: req.user._id,
+    email: req.user.email,
+    isAdmin: req.user.role == 0 ? false : true,
+    isAuth: true,
+    name: req.user.name,
+    role: req.user.role
+  })
+})
+
+app.get('/api/user/logout', auth, (req, res) => {
+  User.findOneAndUpdate({ _id: req.user._id },
+    {token : ""},
+    (err,user)=>{
+      if(err) return res.json({success:false,err});
+      return res.status(200).send({
+        success:true
+      })
+    })
 })
 
 app.listen(port, () => {

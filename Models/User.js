@@ -44,32 +44,42 @@ userSchema.pre('save', function (next) {
             });
         });
     }
-    else{
+    else {
         next();
     }
 });
 
-userSchema.methods.comparePassword = function(plainPassword,cb){
-    bcrypt.compare(plainPassword,this.password,(err,isMatch)=>{
-        if(err) return cb(err);
-        cb(null,isMatch);
+userSchema.methods.comparePassword = function (plainPassword, cb) {
+    bcrypt.compare(plainPassword, this.password, (err, isMatch) => {
+        if (err) return cb(err);
+        cb(null, isMatch);
     })
 }
- 
 
-userSchema.methods.generateToken = function(cb){
+
+userSchema.methods.generateToken = function (cb) {
     var user = this;
-    var token = jwt.sign(user._id.toHexString(),'secretToken');
-    
-          
-    user.token = token; 
-    user.save(function(err,user){
-        if(err){
+    var token = jwt.sign(user._id.toHexString(), 'secretToken');
+
+
+    user.token = token;
+    user.save(function (err, user) {
+        if (err) {
             console.log(err);
             return cb(err);
         }
 
-        cb(null,user);
+        cb(null, user);
+    });
+}
+
+userSchema.statics.findByToken = function (token, cb) {
+    var user = this;
+    jwt.verify(token, 'secretToken', function (err, decoded) {
+        user.findOne({"_id":decoded,"token":token },function(err,user){
+            if(err) return cb(err);
+            cb(null,user);
+        })
     });
 }
 
